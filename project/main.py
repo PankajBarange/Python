@@ -3,10 +3,40 @@ import pyttsx3
 import webbrowser
 import wikipedia
 
-# Initialize TTS engine
+import speech_recognition as sr
+import wikipedia
+import pyttsx3
+
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)
+engine.setProperty('volume', 0)
+
+r = sr.Recognizer()
+with sr.Microphone() as source:
+    print("Speak something...")
+    audio = r.listen(source)
+
+try:
+    query = r.recognize_google(audio)
+    print("You said:", query)
+    summary = wikipedia.summary(query, sentences=1)
+    print(summary)
+    engine.say(summary)
+    engine.runAndWait()
+except sr.UnknownValueError:
+    print("Could not understand audio")
+except sr.RequestError:
+    print("Speech service error")
+except wikipedia.exceptions.DisambiguationError as e:
+    print(e.options)
+except wikipedia.exceptions.PageError:
+    print("Page not found.")
+
+
+
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[0].id)  # Use default male voice
+engine.setProperty('voice', voices[1].id)
 engine.setProperty('rate', 150)
 
 def speak(text):
@@ -20,44 +50,25 @@ def listen():
     recognizer.dynamic_energy_threshold = False
 
     with sr.Microphone() as source:
-        print("Listening...")
         try:
-            audio = recognizer.listen(source, timeout=5, phrase_time_limit=5)
+            audio = recognizer.listen(source, timeout=5)
             query = recognizer.recognize_google(audio)
             print(f"You: {query}")
             return query.lower()
-        except sr.WaitTimeoutError:
-            speak("I didn't hear anything. Please try again.")
-            return None
-        except sr.UnknownValueError:
-            speak("Sorry, I couldn't understand.")
-            return None
-        except sr.RequestError:
-            speak("Network error. Please check your internet.")
+        except:
             return None
 
 def chatbot_response(query):
-    if "hello" in query:    
+    
+    if "hello" in query:
         return "Hello! How can I help you?"
     elif "your name" in query:
         return "I am your assistant."
     elif "open browser" in query or "open google" in query:
         webbrowser.open("https://www.google.com")
-    elif "open instagram" in query or "Instagram" in query:
-        webbrowser.open("https://www.instagram.com/")
         return "Opening browser."
     elif "bye" in query or "exit" in query or "stop" in query:
         return "Goodbye!"
-    elif "wikipedia" in query:
-        try:
-            speak("Searching Wikipedia...")
-            query = query.replace("wikipedia", "").strip()
-            result = wikipedia.summary(query, sentences=2)
-            return result
-        except wikipedia.exceptions.DisambiguationError:
-            return "The topic is too broad. Please be more specific."
-        except wikipedia.exceptions.PageError:
-            return "I couldn't find anything on that topic."
     else:
         return "I didn't understand that."
 
